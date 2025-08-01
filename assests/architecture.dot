@@ -1,0 +1,222 @@
+digraph G {
+    rankdir=TB;
+    splines=ortho;
+    nodesep=0.3; // Increases space between nodes
+    ranksep=0.2; // Increases space between levels
+    label="Recommendation Engine Architecture";
+    labelloc="t";
+    fontsize=24;
+    fontname="Consolas";
+
+    // Global Node style
+    node [shape=box style="rounded,filled" color="#4682B4" fillcolor="#ADD8E6" fontname="Arial" fontsize=12];
+
+    // Input Features Cluster
+    subgraph cluster_input {
+        label="     Input Features";
+        style=filled;
+        color="#FFCC99";
+        fontname="Consolas";
+        fontsize=20;
+        labeljust="l";
+        node [style="rounded,filled", fillcolor="#ADD8E6", color="#4682B4"];
+
+        // Nodes
+        query_features [
+            label=<<b>Query</b>>
+            shape=box style=filled
+        ];
+
+        candidate_features [
+            label=<<b>Candidate</b>>
+            shape=box style=filled
+        ];
+
+        score [label=<<b>Target</b>>];
+
+    }
+
+    // Preprocessing Cluster
+    subgraph cluster_preprocessing {
+        label="     Preprocessing";
+        margin=20;
+        style=filled;
+        color="#E0E0E0";
+        fontname="Consolas";
+        fontsize=20;
+        labeljust="l";
+        node [style="rounded,filled", fillcolor="#ADD8E6", color="#4682B4"];
+
+        nexo [shape="point";width=0.15]
+
+        {
+            rank=same;
+            int_input [label=<<b>Integer</b>>]
+            text_input [label=<<b>Text</b>>]
+            cont_input [label=<<b>Continuous</b>>]
+            str_input [label=<<b>Categorical</b>>]
+            seq_input [label=<<b>Sequential</b>>]
+        }
+
+        subgraph cluster_lambda {
+            label="Lambda\nLayers";
+            margin=10;
+            style=filled;
+            color="#8e9dc5";
+            fontname="Consolas";
+            fontsize=15;
+            labeljust="l";
+
+            lambda_time [label="Extract Time Features"]
+            lambda_null [label="Replace Nulls"]
+            lambda_clip [label="Clipping"]
+            blank_space_0 [style="invis"]
+        }
+
+        subgraph cluster_layers {
+            label="Layers ";
+            margin=10;
+            style=filled;
+            color="#20e2d8";
+            fontname="Consolas";
+            fontsize=15;
+            labeljust="l";
+
+            str [label="StringLookup"]
+            int [label="IntegerLookup"]
+            text [label="TextVectorization"]
+            disc [label="Discretization"]
+            norm [label="Normalization"]
+
+        }
+    }
+    // Embedding Layer Cluster
+    subgraph cluster_embeddings {
+        label=" Embeddings";
+        margin=20;
+        style=filled;
+        color="#FFCCCC";
+        fontname="Consolas";
+        fontsize=20;
+        labeljust="l";
+        labelloc="b"
+
+        node [style="rounded,filled", fillcolor="#ADD8E6", color="#4682B4"];
+
+        {
+            rank=same;
+            str_embedding [label="Embedding"];
+            int_embedding [label="Embedding"];
+            text_embedding [label="Embedding"];
+            disc_embedding [label="Embedding"];
+            norm_reshape [label="Reshape" shape=diamond style="filled" fillcolor="#FFB266"];
+        }
+
+
+        text_average_pooling [label="GlobalAveragePooling1D"];
+
+        embeddings_concat [label="Concat" shape=ellipse style="filled" fillcolor="#90EE90"];
+        { rank=same; str_embedding }
+    }
+
+    // Query Tower Cluster
+    subgraph cluster_query_tower {
+        label="Query\nTower";
+        margin=15;
+        style=filled;
+        color="#FFFFCC";
+        fontname="Consolas";
+        fontsize=15;
+        labeljust="l";
+        node [style="rounded,filled", fillcolor="#ADD8E6", color="#4682B4"];
+
+        query_embedding [label="Query Embedding"];
+        query_output [label="Dense Layers"];
+    }
+
+    // candidate Tower Cluster
+    subgraph cluster_candidate_tower {
+        label="Candidate\nTower";
+        margin=15;
+        style=filled;
+        color="#FFCCE5";
+        fontname="Consolas";
+        fontsize=15;
+        labeljust="c";
+        node [style="rounded,filled", fillcolor="#ADD8E6", color="#4682B4"];
+
+        candidate_embedding [label="Candidate Embedding"];
+        candidate_output [label="Dense Layers"];
+    }
+
+    // Rating Model Cluster
+    subgraph cluster_rating_tower {
+        label=" Rating\nModel";
+        margin=25;
+        labeljust="l";
+        style=filled;
+        color="#CCCCFF";
+        fontname="Consolas";
+        fontsize=15;
+        labeljust="c";
+        node [style="rounded,filled", fillcolor="#ADD8E6", color="#4682B4"];
+
+        concat [label="Concat" shape=ellipse style="filled" fillcolor="#90EE90"];
+        rating_layer [label="Dense Layers"];
+    }
+
+    retrieval_task [label="Retrieval Task" shape=ellipse style="filled" fillcolor="#F08080"];
+    rating_task [label="Ranking Task" shape=ellipse style="filled" fillcolor="#F08080"];
+
+    retrieval_loss [label="FactorizedTopK" shape=hexagon style="filled" fillcolor="#FFFF66"];
+    rating_loss [label="MeanSquaredError" shape=hexagon style="filled" fillcolor="#FFFF66"];
+
+    total_loss [label="Total Loss" shape=box style="filled" fillcolor="#FFFFE0"];
+    optimizer [label="Optimizer" shape=box style="filled" fillcolor="#e74ac5ff"];
+
+    // Define Ranks
+    { rank=same; retrieval_task; rating_task }
+    { rank=same; total_loss; optimizer }
+
+    // Edges
+    edge [color="#4682B4" penwidth=2 fontname="Arial" fontsize=12 arrowhead=None];
+
+    {query_features;candidate_features} -> nexo;
+
+    nexo -> {str_input;text_input;int_input;cont_input;seq_input}
+
+    int_input -> lambda_time;
+    cont_input -> lambda_clip;
+    {str_input;seq_input} -> str;
+    lambda_time -> int;
+    text_input -> lambda_null;
+    lambda_null -> text;
+    lambda_clip -> {norm;disc};
+
+    str -> str_embedding;
+    int -> int_embedding;
+    text -> text_embedding;
+    disc -> disc_embedding;
+    norm -> norm_reshape;
+
+    text_embedding -> text_average_pooling;
+
+    {str_embedding;int_embedding;disc_embedding;norm_reshape;text_average_pooling} -> embeddings_concat [arrowhead=none];
+
+    embeddings_concat -> query_embedding;
+    embeddings_concat -> candidate_embedding;
+
+    query_embedding -> query_output;
+    candidate_embedding -> candidate_output;
+    {query_embedding;candidate_embedding} -> concat;
+
+    concat -> rating_layer;
+
+    {query_output;candidate_output} -> retrieval_task;
+    {rating_layer;score} -> rating_task;
+    {retrieval_loss;rating_loss} -> total_loss;
+    retrieval_task -> retrieval_loss;
+    rating_task -> rating_loss;
+
+    total_loss -> optimizer;
+}
