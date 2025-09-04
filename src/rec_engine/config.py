@@ -53,6 +53,7 @@ class ModelConfig(BaseModel):
 class Params(BaseModel):
     logs_path: str
     target: str
+    time_feature: str
     batch_size: int
     seed: int
     tower: TowerConfig
@@ -89,6 +90,7 @@ class OptunaConfig(BaseModel):
 params = {
     "logs_path": "",
     "target": "score",
+    "time_feature": "time",
     "batch_size": 128,
     "seed": 42,
     "tower": {
@@ -182,6 +184,9 @@ def create_params(path: str = None) -> None:
     - `text-` for text features
     - `disc-` for discretization transformation of continuous numerical features
     - `norm-` for normalization transformation of continuous numerical features
+
+    **NOTE: It is necessary to apply a transformation to be considered by the model, if not, it will be ignored.
+    This is true for all features except the target feature, which is expected to be a rating value so it is not transformed.**
 
     Layers definition is given by a list of integers, where each integer is the number of units at each layer in order.
 

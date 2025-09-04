@@ -203,13 +203,13 @@ class RecommenderEngineModel(tfrs.models.Model):
         # Preprocessing
         if preprocessing:
             self.query_prep_layer = Preprocessing(
-                "QueryPreprocessing",
-                self.params["tower"]["query"],
+                "query",
+                self.params,
                 queries.batch(1024).cache().prefetch(tf.data.AUTOTUNE)
             )
             self.candidate_prep_layer = Preprocessing(
-                "CandidatePreprocessing",
-                self.params["tower"]["candidate"],
+                "candidate",
+                self.params,
                 candidates.batch(1024).cache().prefetch(tf.data.AUTOTUNE)
             )
             self.feature_dim = {**self.query_prep_layer.feature_dim, **self.candidate_prep_layer.feature_dim}

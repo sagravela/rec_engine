@@ -131,13 +131,13 @@ def split_and_preprocess(
 
     # Create preprocessing layers instances
     query_prep_layer = Preprocessing(
-        "QueryPreprocessing",
-        params["tower"]["query"],
+        "query",
+        params,
         train_ds.batch(512)
     )
     candidate_prep_layer = Preprocessing(
-        "CandidatePreprocessing",
-        params["tower"]["candidate"],
+        "candidate",
+        params,
         candidate_ds.batch(512)
     )
     feature_dim = {**query_prep_layer.feature_dim, **candidate_prep_layer.feature_dim}

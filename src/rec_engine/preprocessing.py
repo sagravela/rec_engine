@@ -2,6 +2,8 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 import numpy as np
 
+from rec_engine.config import Params
+
 ## Preprocessing Layer
 @tf.function
 def replace_empty_string(x: tf.Tensor) -> tf.Tensor:
@@ -25,7 +27,7 @@ def replace_empty_string(x: tf.Tensor) -> tf.Tensor:
     )
 
 @tf.function
-def extract_features(x: dict[str, tf.Tensor]) -> dict[str, tf.Tensor]:
+def extract_features(x: dict[str, tf.Tensor], time_feature: str) -> dict[str, tf.Tensor]:
     """
     Extracts time-based features such as the hour and day of the week from a timestamp in the input using Zellers Congruence.
     The timestamp is a feature called `time` in the input data.
@@ -41,7 +43,7 @@ def extract_features(x: dict[str, tf.Tensor]) -> dict[str, tf.Tensor]:
         Dictionary of processed data.
     """
     # Extract the "time" feature
-    times = x["time"]
+    times = x[time_feature]
 
     # Extract date and time parts using substr
     date_str = tf.strings.substr(times, 0, 10)
@@ -126,8 +128,8 @@ class Preprocessing(tf.keras.layers.Layer):
 
     Attributes
     ---
-    name : str
-        Name of the preprocessing instance layer.
+    tower : str
+        Feature tower of the preprocessing instance layer.
     features : list[str]
         List of features to be processed.
     ds : tf.data.Dataset
@@ -137,17 +139,18 @@ class Preprocessing(tf.keras.layers.Layer):
     ---
     call(input: dict[str, tf.Tensor])
     """
-    def __init__(self, name: str, features: list[str], ds: tf.data.Dataset= None):
-        super().__init__(name=name)
+    def __init__(self, tower: str, params: Params, ds: tf.data.Dataset= None):
+        super().__init__(name=f"{tower.capitalize()}Preprocessing")
 
-        self.features = features
+        self.params = params
+        self.features = params["tower"][tower]
         self.prep_layers = {}
         self.feature_dim = {}
 
         self.extract_time_features = None
         if "int-hour" in self.features or "int-day_of_week" in self.features:
             self.extract_time_features = tf.keras.layers.Lambda(
-                extract_features, name= "extract_time_features"
+                extract_features, name= "extract_time_features", arguments = {"time_feature": self.params["time_feature"]}
             )
 
         self.cont_features = list(
